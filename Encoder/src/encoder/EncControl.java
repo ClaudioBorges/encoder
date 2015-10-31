@@ -86,7 +86,10 @@ public class EncControl {
         return (path + "\\" + dateFormat.format(date) + "_" + camID + ".mp4");
     } 
     
-    public void start() {        
+    public void start() throws IOException {   
+        if (this.isRecording)
+            throw new IOException("Already running...");
+        
         for (int camID = 0; camID < webcams.size(); camID++) {
             filenames[camID] = formatFilename(defaultFilePath, camID);
             
@@ -103,34 +106,41 @@ public class EncControl {
     }
     
     public void stop() {
-        for (Encoder enc : encs) {
-            try {
-                enc.stop();
-                enc.close();
-                enc = null;
-            } catch (InterruptedException ex) {
-                Logger.getLogger(EncControl.class.getName())
-                        .log(Level.SEVERE, null, ex);
+        if (encs != null) {
+            for (Encoder enc : encs) {
+                try {
+                    if (enc != null) {
+                        enc.stop();
+                        enc.close();
+                        enc = null;
+                    }
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(EncControl.class.getName())
+                            .log(Level.SEVERE, null, ex);
+                }
             }
         }
         
-        for (String f : filenames) {
-            try {
-                int pointIdx = f.lastIndexOf(".");
-                
-                String name = f.subSequence(0, pointIdx).toString();
-                String ext = f.subSequence(pointIdx, f.length()).toString();
-                
-                String filename = name + "__" + identifier + ext;
-                
-                File oldFile = new File(f);
-                File newFile = new File(filename);
-                Files.move(oldFile.toPath(), newFile.toPath());
-            } catch (IOException ex) {
-                Logger.getLogger(EncControl.class.getName())
-                        .log(Level.SEVERE, null, ex);
+        if (identifier != null) {
+            for (String f : filenames) {
+                try {
+                    int pointIdx = f.lastIndexOf(".");
+
+                    String name = f.subSequence(0, pointIdx).toString();
+                    String ext = f.subSequence(pointIdx, f.length()).toString();
+
+                    String filename = name + "__" + identifier + ext;
+
+                    File oldFile = new File(f);
+                    File newFile = new File(filename);
+                    Files.move(oldFile.toPath(), newFile.toPath());
+                } catch (IOException ex) {
+                    Logger.getLogger(EncControl.class.getName())
+                            .log(Level.SEVERE, null, ex);
+                }
             }
         }
+        this.identifier = null;
         this.isRecording = false;
     }
     
@@ -155,7 +165,12 @@ public class EncControl {
         
         enc.openResources();
         
-        enc.start();
+        try {
+            enc.start();
+        } catch (IOException ex) {
+            Logger.getLogger(EncControl.class.getName())
+                    .log(Level.SEVERE, null, ex);
+        }
         enc.setIdentifier("38502729829");
         
         try {

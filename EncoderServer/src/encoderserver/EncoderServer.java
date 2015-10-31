@@ -50,25 +50,33 @@ public class EncoderServer {
     private void encHandle_Init(
             PrintWriter out, BufferedReader in, EncControl encControl) {
         
-        ENCODER_ERROR err = ENCODER_ERROR.INIT_FAIL;
-        
-        if (encControl.isRecording) {
-            encControl.stop();
+        try {
+            ENCODER_ERROR err = ENCODER_ERROR.INIT_FAIL;
+            
+            if (encControl.isRecording) {
+                encControl.stop();
+            }
+            
+            encControl.start();
+            err = ENCODER_ERROR.INIT_OK;
+            
+            dbgMsg(err.toString());
+            out.println(err.toString());
+        } catch (IOException ex) {
+            Logger.getLogger(EncoderServer.class.getName())
+                    .log(Level.SEVERE, null, ex);
         }
-        
-        encControl.start();
-        err = ENCODER_ERROR.INIT_OK;
-        
-        dbgMsg(err.toString());
-        out.println(err.toString());
     }
     
     private void encHandle_SetCpf(
             PrintWriter out, BufferedReader in, EncControl encControl) 
             throws IOException {
         
-        String fromClient = in.readLine();
         ENCODER_ERROR err = ENCODER_ERROR.CPF_INVALID;
+        
+        String fromClient = in.readLine();
+        
+        fromClient = cpflib.CPFLib.formatCPF_onlyNumbers(fromClient);
         
         encControl.setIdentifier(fromClient);
         
