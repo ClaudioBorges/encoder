@@ -10,46 +10,30 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.net.SocketTimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import encoderserver.EncoderServer.ENCODER_ERROR;
 
 /**
  *
  * @author Claudio
  */
 public class EncoderClient {
-    public enum ENCODER_ERROR {
-
-        INIT_OK,
-        INIT_FAIL,
-        CPF_OK,
-        CPF_INVALID,
-        STOP_OK,
-        STOP_FAIL,
-    };
-  
-    private static final int SERVER_PORT = 1766;
     private static final String HOSTNAME = "localhost";
-    
-    private static final String reqEncInit      = "REQ_encoder_init";
-    private static final String reqEncSetCpf    = "REQ_encoder_set_cpf";
-    private static final String reqEncStop      = "REQ_encoder_stop";
-    
-    
+  
     static void dbgMsg(String s) {
         System.out.println("[DEBUG] " + s);
-    }
-    
+    }    
     
     public static boolean initEncoder() {
         boolean state = false;
         Socket socket = null;
         
         try {
-            String fromServer = null;
+            String fromServer;
             
-            socket = new Socket(HOSTNAME, SERVER_PORT);
+            socket = new Socket(HOSTNAME, encoderserver.EncoderServer.SERVER_PORT);
             socket.setSoTimeout(25000);
             
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
@@ -57,9 +41,9 @@ public class EncoderClient {
                                     new InputStreamReader(
                                         socket.getInputStream()));        
         
-            dbgMsg("Socket oppened...");
-            dbgMsg("Client: " + reqEncInit);
-            out.println(reqEncInit);
+            dbgMsg("Socket opened...");
+            dbgMsg("Client: " + encoderserver.EncoderServer.reqEncInit);
+            out.println(encoderserver.EncoderServer.reqEncInit);
             
             fromServer = in.readLine();
             dbgMsg("Server: " + fromServer);
@@ -90,9 +74,9 @@ public class EncoderClient {
         Socket socket = null;
         
         try {
-            String fromServer = null;
+            String fromServer;
             
-            socket = new Socket(HOSTNAME, SERVER_PORT);
+            socket = new Socket(HOSTNAME, encoderserver.EncoderServer.SERVER_PORT);
             socket.setSoTimeout(25000);
             
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
@@ -100,10 +84,10 @@ public class EncoderClient {
                                     new InputStreamReader(
                                         socket.getInputStream()));        
         
-            dbgMsg("Socket oppened...");
-            dbgMsg("Client: " + reqEncStop);            
+            dbgMsg("Socket opened...");
+            dbgMsg("Client: " + encoderserver.EncoderServer.reqEncSetCpf);            
             dbgMsg("Client: " + cpf);
-            out.println(reqEncSetCpf);
+            out.println(encoderserver.EncoderServer.reqEncSetCpf);
             out.println(cpf);
             
             fromServer = in.readLine();
@@ -132,14 +116,14 @@ public class EncoderClient {
         return state;
     }        
 
-    public static boolean stopEncoder() {
+    public static boolean setPath(String path) {
         boolean state = false;
         Socket socket = null;
         
         try {
-            String fromServer = null;
+            String fromServer;
             
-            socket = new Socket(HOSTNAME, SERVER_PORT);
+            socket = new Socket(HOSTNAME, encoderserver.EncoderServer.SERVER_PORT);
             socket.setSoTimeout(25000);
             
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
@@ -147,9 +131,56 @@ public class EncoderClient {
                                     new InputStreamReader(
                                         socket.getInputStream()));        
         
-            dbgMsg("Socket oppened...");
-            dbgMsg("Client: " + reqEncStop);
-            out.println(reqEncStop);
+            dbgMsg("Socket opened...");
+            dbgMsg("Client: " + encoderserver.EncoderServer.reqEncSetPath);            
+            dbgMsg("Client: " + path);
+            out.println(encoderserver.EncoderServer.reqEncSetPath);
+            out.println(path);
+            
+            fromServer = in.readLine();
+            dbgMsg("Server: " + fromServer);
+            ENCODER_ERROR err = ENCODER_ERROR.valueOf(fromServer);
+            if (err == ENCODER_ERROR.PATH_OK) {
+                state = true;
+            }
+            
+        } catch (Exception ex) {
+            Logger.getLogger(
+                    EncoderClient.class.getName())
+                    .log(Level.SEVERE, null, ex);
+        } finally {
+            if (socket != null) {
+                try {
+                    socket.close();
+                } catch (IOException ex) {
+                    Logger.getLogger(
+                            EncoderClient.class.getName())
+                            .log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+        
+        return state;
+    }        
+    
+    public static boolean stopEncoder() {
+        boolean state = false;
+        Socket socket = null;
+        
+        try {
+            String fromServer;
+            
+            socket = new Socket(HOSTNAME, encoderserver.EncoderServer.SERVER_PORT);
+            socket.setSoTimeout(25000);
+            
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+            BufferedReader in = new BufferedReader(
+                                    new InputStreamReader(
+                                        socket.getInputStream()));        
+        
+            dbgMsg("Socket opened...");
+            dbgMsg("Client: " + encoderserver.EncoderServer.reqEncStop);
+            out.println(encoderserver.EncoderServer.reqEncStop);
             
             fromServer = in.readLine();            
             dbgMsg("Server: " + fromServer);
@@ -186,7 +217,8 @@ public class EncoderClient {
 
             System.out.println("1 - Init");
             System.out.println("2 - Set CPF");
-            System.out.println("3 - Stop");
+            System.out.println("3 - Set Path");
+            System.out.println("4 - Stop");
             System.out.println("or exit");
                         
             try {
@@ -203,11 +235,14 @@ public class EncoderClient {
                     state = setCPF(stdIn.readLine());
                 }
                 else if (fromUser.contains("3")) {
+                    state = setPath(stdIn.readLine());
+                }
+                else if (fromUser.contains("4")) {
                     state = stopEncoder();
                 }
 
                 System.out.println("RSP: " + state);
-                System.out.println("\n\n");
+                System.out.println("\n");
             } 
             catch (IOException ex) {
                 Logger.getLogger(EncoderClient.class.getName())

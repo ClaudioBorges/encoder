@@ -28,7 +28,7 @@ import javax.sound.sampled.TargetDataLine;
  * @author Claudio
  */
 public class EncControl {
-    private final String defaultFilePath;
+    private String defaultFilePath;
     
     private static final int frameRate = 15;
     private static final Dimension dimension = WebcamResolution.QVGA.getSize();
@@ -45,9 +45,35 @@ public class EncControl {
     
     public boolean isRecording = false;
     
+    public EncControl() {
+        defaultFilePath = ".";
+    }
+    
     public EncControl(String path) {
-        defaultFilePath = path;
-    } 
+        defaultFilePath = ".";
+        setDefaultFilePath(path);
+    }
+    
+    public boolean setDefaultFilePath(String path) {
+        File dir = new File(path);
+        boolean result = false;
+        
+        if (dir.exists() == false) {
+            try {
+                dir.mkdirs();
+                defaultFilePath = path;
+                result = true;
+            } catch (SecurityException ex) {
+               Logger.getLogger(EncControl.class.getName())
+                    .log(Level.SEVERE, null, ex); 
+            }
+        } else {
+            defaultFilePath = path;
+            result = true;
+        }
+        
+        return result;
+    }
     
     public void openResources() {
         try {
@@ -124,12 +150,14 @@ public class EncControl {
         if (identifier != null) {
             for (String f : filenames) {
                 try {
+                    int pathIdx = f.lastIndexOf("\\");
                     int pointIdx = f.lastIndexOf(".");
 
-                    String name = f.subSequence(0, pointIdx).toString();
+                    String path = f.substring(0, pathIdx).toString();
+                    String name = f.subSequence(pathIdx, pointIdx).toString();
                     String ext = f.subSequence(pointIdx, f.length()).toString();
 
-                    String filename = name + "__" + identifier + ext;
+                    String filename = defaultFilePath + "\\" + name + "__" + identifier + ext;
 
                     File oldFile = new File(f);
                     File newFile = new File(filename);

@@ -23,14 +23,14 @@ import java.util.logging.Logger;
  */
 public class EncoderServer {
 
-    private static final String HOSTNAME = "localhost";
     private static final int desiredCams = 5;
     
-    private static final int SERVER_PORT = 1766;
+    public static final int SERVER_PORT = 1766;
     
-    private static final String reqEncInit      = "REQ_encoder_init";
-    private static final String reqEncSetCpf    = "REQ_encoder_set_cpf";
-    private static final String reqEncStop      = "REQ_encoder_stop";
+    public static final String reqEncInit      = "REQ_encoder_init";
+    public static final String reqEncSetCpf    = "REQ_encoder_set_cpf";
+    public static final String reqEncSetPath   = "REQ_encoder_set_path";
+    public static final String reqEncStop      = "REQ_encoder_stop";
 
     public enum ENCODER_ERROR {
 
@@ -38,6 +38,8 @@ public class EncoderServer {
         INIT_FAIL,
         CPF_OK,
         CPF_INVALID,
+        PATH_OK,
+        PATH_INVALID,
         STOP_OK,
         STOP_FAIL,
     };
@@ -85,6 +87,22 @@ public class EncoderServer {
         dbgMsg(err.toString());
         out.println(err.toString());
     }
+
+        
+    private void encHandle_SetFilePath(
+            PrintWriter out, BufferedReader in, EncControl encControl) 
+            throws IOException {
+        
+        ENCODER_ERROR err = ENCODER_ERROR.PATH_INVALID;
+        
+        String fromClient = in.readLine();
+        
+        if (encControl.setDefaultFilePath(fromClient) == true)
+            err = ENCODER_ERROR.PATH_OK;
+        
+        dbgMsg(err.toString()); 
+        out.println(err.toString());
+    }
     
     private void encHandle_Stop(
             PrintWriter out, BufferedReader in, EncControl encControl) {
@@ -126,6 +144,11 @@ public class EncoderServer {
                         dbgMsg(reqEncSetCpf);
                         encHandle_SetCpf(out, in, encControl);
                         break;
+                    
+                    case reqEncSetPath:
+                        dbgMsg(reqEncSetPath);
+                        encHandle_SetFilePath(out, in, encControl);
+                        break;
                         
                     case reqEncStop:
                         dbgMsg(reqEncStop);
@@ -165,7 +188,7 @@ public class EncoderServer {
 
         try {
             dbgMsg("Openning Encoder...");
-            encControl = new EncControl("C:\\Teste\\Videos");
+            encControl = new EncControl();
             encControl.openResources();
             if ((encControl.isAudioOk() == false)
                 || (encControl.getNumCams() >= desiredCams)) {
@@ -212,19 +235,19 @@ public class EncoderServer {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        EncoderServer encServer = new EncoderServer();
+        EncoderServer server = new EncoderServer();
 
         while (true) {
             try {
-                encServer.dbgMsg("System running...");
-                encServer.run();
+                server.dbgMsg("System running...");
+                server.run();
 
             } catch (Exception ex) {
                 Logger.getLogger(
                         EncoderServer.class.getName()).log(Level.SEVERE, null, ex);
             }
 
-            encServer.dbgMsg("Sleeping...");
+            server.dbgMsg("Sleeping...");
 
             try {
                 Thread.sleep(1000);
