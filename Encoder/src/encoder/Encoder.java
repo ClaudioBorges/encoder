@@ -15,6 +15,7 @@ import com.xuggle.xuggler.IPixelFormat;
 import com.xuggle.xuggler.IVideoPicture;
 import com.xuggle.xuggler.video.ConverterFactory;
 import com.xuggle.xuggler.video.IConverter;
+import java.awt.Graphics2D;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -27,6 +28,7 @@ import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.TargetDataLine;
+import java.awt.geom.AffineTransform;
 
 
 public class Encoder {
@@ -36,6 +38,7 @@ public class Encoder {
     
     private int vFrameRate;
     private Dimension vSize;
+    private boolean isFlipped;
     private final IMediaWriter writer;
     
     private ScheduledFuture<Runnable> scheduleWithFixedDelay;
@@ -64,6 +67,10 @@ public class Encoder {
                 try {
                     if (webcam != null) {
                         BufferedImage capture = webcam.getImage();
+                        
+                        if (isFlipped) {
+                            capture = createFlipped(capture);
+                        }
 
                         BufferedImage image = 
                                 ConverterFactory.convertToType(
@@ -134,10 +141,12 @@ public class Encoder {
     public void addVideo(
             int videoFrameRate, 
             Dimension size, 
+            boolean isFlipped,
             Webcam webcam) {
         
         this.webcam = webcam;
         this.vFrameRate = videoFrameRate;
+        this.isFlipped = isFlipped;
         this.vSize = size;
         
         writer.addVideoStream(
@@ -207,6 +216,27 @@ public class Encoder {
             this.writer.close();
     }
     
+    private static BufferedImage createFlipped(BufferedImage image)
+    {
+        AffineTransform at = new AffineTransform();
+        at.concatenate(AffineTransform.getScaleInstance(1, -1));
+        at.concatenate(AffineTransform.getTranslateInstance(0, -image.getHeight()));
+        return createTransformed(image, at);
+    }
+    
+    private static BufferedImage createTransformed(
+        BufferedImage image, AffineTransform at)
+    {
+        BufferedImage newImage = new BufferedImage(
+            image.getWidth(), image.getHeight(),
+            BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = newImage.createGraphics();
+        g.transform(at);
+        g.drawImage(image, 0, 0, null);
+        g.dispose();
+        return newImage;
+    }
+    
     public static void main(String[] args) throws Throwable {
 
         // video parameters
@@ -255,7 +285,7 @@ public class Encoder {
         };
         
         for (Encoder enc : encoder) {
-            enc.addVideo(frameRate, dimension, webcams.get(0));
+            enc.addVideo(frameRate, dimension, false, webcams.get(0));
             if (enc.getID() == cameraAudioID) {
                 enc.addAudio(audioFormat, line);
             }

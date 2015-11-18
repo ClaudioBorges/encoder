@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  */
 public class EncoderServer {
 
-    private static final int desiredCams = 5;
+    private static final String configFile = "EncoderServer.properties";
     
     public static final int SERVER_PORT = 1766;
     
@@ -97,8 +97,9 @@ public class EncoderServer {
         
         String fromClient = in.readLine();
         
-        if (encControl.setDefaultFilePath(fromClient) == true)
-            err = ENCODER_ERROR.PATH_OK;
+        encControl.setDefaultPath(fromClient);
+        
+        err = ENCODER_ERROR.PATH_OK;
         
         dbgMsg(err.toString()); 
         out.println(err.toString());
@@ -188,13 +189,8 @@ public class EncoderServer {
 
         try {
             dbgMsg("Openning Encoder...");
-            encControl = new EncControl();
+            encControl = new EncControl(configFile);
             encControl.openResources();
-            if ((encControl.isAudioOk() == false)
-                || (encControl.getNumCams() >= desiredCams)) {
-
-                throw new IOException("Cameras or audio not found.");
-            }
 
             dbgMsg("Openning server port...");
             socket = new ServerSocket(SERVER_PORT);
