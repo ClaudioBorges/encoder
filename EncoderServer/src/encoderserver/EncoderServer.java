@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  */
 public class EncoderServer {
 
-    private static final String configFile = "EncoderServer.properties";
+    private final String configFile;
     
     public static final int SERVER_PORT = 1766;
     
@@ -33,7 +33,6 @@ public class EncoderServer {
     public static final String reqEncStop      = "REQ_encoder_stop";
 
     public enum ENCODER_ERROR {
-
         INIT_OK,
         INIT_FAIL,
         CPF_OK,
@@ -48,6 +47,9 @@ public class EncoderServer {
         System.out.println("[DEBUG] " + s);
     }
 
+    public EncoderServer(String configFile) {
+        this.configFile = configFile;
+    }
     
     private void encHandle_Init(
             PrintWriter out, BufferedReader in, EncControl encControl) {
@@ -231,27 +233,35 @@ public class EncoderServer {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        EncoderServer server = new EncoderServer();
+        String configFile; 
+        
+        if (args.length > 1) {
+            System.out.println("usage: \"config_file\"");
+            return;
+        } else if (args.length == 0) {
+            configFile = "../_default_files/EncoderServer/EncoderServer.properties";
+        } else {
+            configFile = args[0];
+        }        
+        
+        EncoderServer server = new EncoderServer(configFile);
 
-        while (true) {
-            try {
-                server.dbgMsg("System running...");
-                server.run();
+        try {
+            server.dbgMsg("System running...");
+            server.run();
 
-            } catch (Exception ex) {
-                Logger.getLogger(
-                        EncoderServer.class.getName()).log(Level.SEVERE, null, ex);
-            }
+        } catch (Exception ex) {
+            Logger.getLogger(
+                    EncoderServer.class.getName()).log(Level.SEVERE, null, ex);
+        }
 
-            server.dbgMsg("Sleeping...");
+        server.dbgMsg("Sleeping...");
 
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException ex) {
-                Logger.getLogger(EncoderServer.class.getName())
-                        .log(Level.SEVERE, null, ex);
-            }
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(EncoderServer.class.getName())
+                    .log(Level.SEVERE, null, ex);
         }
     }
-
 }

@@ -243,6 +243,7 @@ public class EncControl {
                     
                     if (webcam.getName().equals(value)) {
                         webcam.setViewSize(camConfig.dimension);
+                        webcam.close();
                         webcam.open(true);
                 
                         dbgMsg("Camera accepted: " + webcam.getName());
@@ -273,9 +274,9 @@ public class EncControl {
     private static String formatFilename(String path, int camID) {
         Date date = new Date();
         SimpleDateFormat dateFormat = 
-                new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss") ;
+                new SimpleDateFormat("yyyy-MM-dd__HH-mm-ss") ;
         
-        return (path + "\\" + dateFormat.format(date) + "_" + camID + ".mp4");
+        return (path + "\\" + camID + "_" + dateFormat.format(date) + ".mp4");
     } 
     
     public void start() throws IOException {   
@@ -347,7 +348,7 @@ public class EncControl {
                     try {
                         createFolder(newPath);
 
-                        String filename = newPath + "\\" + name + "__" + identifier + ext;
+                        String filename = newPath + "\\" + name + "___" + identifier + ext;
 
                         File oldFile = new File(f);
                         File newFile = new File(filename);
