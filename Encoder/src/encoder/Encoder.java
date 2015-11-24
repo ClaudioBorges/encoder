@@ -36,6 +36,9 @@ public class Encoder {
     private static final int AUDIO_STREAM_ID = 1;
     private static final int VIDEO_STREAM_ID = 0;
     
+    private static final int AUDIO_FRAMERATE = 2;
+    private int audioReduceCount;
+    
     private int vFrameRate;
     private Dimension vSize;
     private boolean isFlipped;
@@ -94,7 +97,11 @@ public class Encoder {
 
                         this.vFrameCount++;
                     }
-                    if (line != null) {
+                    
+                    if (line != null && (++audioReduceCount >= vFrameRate/AUDIO_FRAMERATE)) {
+                        
+                        audioReduceCount = 0;
+                        
                         byte[] audioBuf = getTargetDataLineBytes();
                         if (audioBuf != null) {
 
@@ -171,6 +178,7 @@ public class Encoder {
 
             // audio buffer
             int    numBytesToRead = line.available();
+            System.out.println(numBytesToRead);
             byte[] audioBuf       = new byte[numBytesToRead];
 
             // Encode the audio into audio stream. */
@@ -188,6 +196,12 @@ public class Encoder {
     
     public void rec() {
         this.startNanoSec = System.nanoTime();
+        
+        
+        audioReduceCount = 0;
+        if (line != null) {
+            line.flush();
+        }
         
         timeWorker = new ScheduledThreadPoolExecutor(1);  
         scheduleWithFixedDelay 

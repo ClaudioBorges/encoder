@@ -46,10 +46,8 @@ public class EncControl {
     private List<Webcam> webcams = null;
     private TargetDataLine line = null;
     private String[] filenames = null;
-    private Encoder[] encs = null;
-    
-    private String identifier = null;
-    
+    private Encoder[] encs = null;    
+    private String identifier = null;    
     public boolean isRecording = false;
  
     private PropertyValues config;
@@ -110,15 +108,10 @@ public class EncControl {
         } catch (IOException e) {
             // Do nothing
         }
-        
-        if (config.framerate == 0) {
-            config.framerate = 15;
-        }
     }
      
     private final class PropertyValues {
-        public int num = 0;        
-        public int framerate = 0;
+        public int num = 0;
         public CamConfig[] camConfigs = null;
         
         public PropertyValues(String filename) throws IOException {
@@ -178,16 +171,10 @@ public class EncControl {
                             }
                             
                             if (audio != null) {
-                                camConfigs[i].setAudio(Boolean.valueOf(flip));
+                                camConfigs[i].setAudio(Boolean.valueOf(audio));
                             }
                         }
                     }
-                } catch (NumberFormatException e) {
-                    // Do nothing
-                }
-                
-                try {
-                    framerate = Integer.parseInt(prop.getProperty("CAM_CONFIG_FRAMERATE"));
                 } catch (NumberFormatException e) {
                     // Do nothing
                 }
@@ -229,24 +216,30 @@ public class EncControl {
             int cams = 0;
             webcams = Webcam.getWebcams();
             
+            for (CamConfig camConfig : config.camConfigs) {
+                dbgMsg("Configured camera: " + camConfig.name);
+            }
+            
             for (int i = 0; i < webcams.size(); ++i) {
                 Webcam webcam = webcams.get(i);
                 
-                dbgMsg("Testing camera: " + webcam.getName());
+                dbgMsg("Available camera: " + webcam.getName());
+            }
+            
+            for (int i = 0; i < webcams.size(); ++i) {
+                Webcam webcam = webcams.get(i);
                 
                 for (CamConfig camConfig : config.camConfigs) {
                     String value = camConfig.name;
                     if (value == null)
                         continue;
                     
-                    dbgMsg("Camera from config: " + value);
-                    
                     if (webcam.getName().equals(value)) {
                         webcam.setViewSize(camConfig.dimension);
                         webcam.close();
                         webcam.open(true);
                 
-                        dbgMsg("Camera accepted: " + webcam.getName());
+                        dbgMsg("Binded camera: " + webcam.getName());
                         
                         cams++;
                         
@@ -263,7 +256,7 @@ public class EncControl {
             line
                     = (TargetDataLine)AudioSystem.getLine(dataLineInfo);
             // Open and start capturing audio
-            line.open(audioFormat, line.getBufferSize());
+            line.open(audioFormat, line.getBufferSize() * 15);
             line.start();
         } catch (LineUnavailableException ex) {
             Logger.getLogger(EncControl.class.getName())
@@ -384,7 +377,7 @@ public class EncControl {
     }
     
     public static void main(String[] args) {
-        EncControl enc = new EncControl("C:\\Teste\\Videos");
+        EncControl enc = new EncControl("../_default_files/EncoderServer/EncoderServerDebug.properties");
         
         enc.openResources();
         
@@ -397,14 +390,11 @@ public class EncControl {
         enc.setIdentifier("38502729829");
         
         try {
-            Thread.sleep(1000);
+            Thread.sleep(10000);
         } catch (InterruptedException ex) {
             Logger.getLogger(EncControl.class.getName()).log(Level.SEVERE, null, ex);
         }
         
         enc.stop();
-        
     }
-    
-    
 }
