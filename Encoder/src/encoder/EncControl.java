@@ -235,9 +235,12 @@ public class EncControl {
                         continue;
                     
                     if (webcam.getName().equals(value)) {
+                        
+                        dbgMsg("Binding camera: " + webcam.getName() + "...");
+                        
                         webcam.setViewSize(camConfig.dimension);
                         webcam.close();
-                        webcam.open(true);
+                        webcam.open();
                 
                         dbgMsg("Binded camera: " + webcam.getName());
                         

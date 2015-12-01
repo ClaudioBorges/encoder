@@ -80,7 +80,7 @@ public class EncoderServer {
         
         String fromClient = in.readLine();
         
-        fromClient = cpflib.CPFLib.formatCPF_onlyNumbers(fromClient);
+        fromClient = util.CPFLib.formatCPF_onlyNumbers(fromClient);
         
         encControl.setIdentifier(fromClient);
         
